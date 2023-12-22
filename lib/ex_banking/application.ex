@@ -8,16 +8,11 @@ defmodule ExBanking.Application do
   @impl true
   def start(_type, _args) do
     children = [
-      # Start the Telemetry supervisor
-      ExBankingWeb.Telemetry,
-      # Start the PubSub system
-      {Phoenix.PubSub, name: ExBanking.PubSub},
-      # Start Finch
-      {Finch, name: ExBanking.Finch},
-      # Start the Endpoint (http/https)
-      ExBankingWeb.Endpoint
-      # Start a worker by calling: ExBanking.Worker.start_link(arg)
-      # {ExBanking.Worker, arg}
+      # Start User Registry
+      {Registry, keys: :unique, name: ExBanking.UserRegistry},
+
+      # Start User Supervisor
+      {DynamicSupervisor, strategy: :one_for_one, name: ExBanking.Users.Supervisor}
     ]
 
     # See https://hexdocs.pm/elixir/Supervisor.html
