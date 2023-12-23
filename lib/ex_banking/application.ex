@@ -15,7 +15,10 @@ defmodule ExBanking.Application do
       {DynamicSupervisor, strategy: :one_for_one, name: ExBanking.Users.Supervisor},
 
       # Start RateLimiter
-      ExBanking.RateLimiter
+      ExBanking.RateLimiter,
+
+      # Start Currency Process
+      ExBanking.Currencies
     ]
 
     # See https://hexdocs.pm/elixir/Supervisor.html

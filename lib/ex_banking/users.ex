@@ -10,8 +10,14 @@ defmodule ExBanking.Users do
 
   @spec create(User.name()) :: :ok
   def create(username) do
-    {:ok, _child} = UserSupervisor.start_child(user: username)
-    :ok
+    case get_user(username) do
+      {:ok, _user} ->
+        {:error, :user_already_exists}
+
+      {:error, :user_does_not_exist} ->
+        {:ok, _child} = UserSupervisor.start_child(user: username)
+        :ok
+    end
   end
 
   @spec deposit(User.name(), Account.balance(), Account.currency()) ::
@@ -30,11 +36,11 @@ defmodule ExBanking.Users do
     end
   end
 
-  @spec user_exists?(User.name()) :: boolean()
-  def user_exists?(user) do
+  @spec get_user(any()) :: {:error, :user_does_not_exist} | {:ok, User.t()}
+  def get_user(user) do
     case Registry.lookup(ExBanking.UserRegistry, user) do
-      [] -> false
-      [{_, _}] -> true
+      [] -> {:error, :user_does_not_exist}
+      [{_, _}] -> {:ok, %User{name: user}}
     end
   end
 

@@ -43,21 +43,21 @@ defmodule ExBanking.Users.Server do
   def handle_call({:get_balance, currency}, _from, %State{accounts: accounts} = state) do
     balance = get_in(accounts, [currency, Access.key(:balance)]) || 0.0
 
-    {:reply, balance, state}
+    {:reply, to_float(balance), state}
   end
 
   def handle_call({:deposit, amount, currency}, _from, %State{accounts: accounts} = state) do
     new_balance =
       case accounts[currency] do
-        nil -> to_float(amount)
-        %Account{balance: balance} -> to_float(balance + amount)
+        nil -> amount
+        %Account{balance: balance} -> balance + amount
       end
 
     accounts =
       Map.put(accounts, currency, %Account{currency: currency, balance: new_balance})
 
     state = %{state | accounts: accounts}
-    {:reply, new_balance, state}
+    {:reply, to_float(new_balance), state}
   end
 
   def handle_call({:withdraw, amount, currency}, _from, %State{accounts: accounts} = state) do
@@ -68,7 +68,7 @@ defmodule ExBanking.Users.Server do
 
       accounts = Map.put(accounts, currency, %Account{currency: currency, balance: new_balance})
       state = %{state | accounts: accounts}
-      {:reply, new_balance, state}
+      {:reply, to_float(new_balance), state}
     else
       false ->
         {:reply, {:error, :not_enough_money}, state}
@@ -82,7 +82,7 @@ defmodule ExBanking.Users.Server do
   defp enough_balance?(_account, _deduct_amount), do: false
 
   defp to_float(balance) when is_integer(balance),
-    do: balance |> :erlang.float() |> to_float()
+    do: balance |> :erlang.float()
 
   defp to_float(balance),
     do: Float.round(balance, 2)

@@ -7,101 +7,123 @@ defmodule ExBanking do
   if it comes from the database, an external API or others.
   """
 
-  alias ExBanking.Types.User
+  alias ExBanking.RateLimiter
   alias ExBanking.Users
+  alias ExBanking.Validators
 
-  @spec create_user(User.name()) :: :ok | {:error, :wrong_arguments | :user_already_exists}
-  def create_user(user) when is_binary(user) do
-    with false <- Users.user_exists?(user) do
-      Users.create(user)
+  @spec create_user(User.name()) ::
+          :ok | {:error, :wrong_arguments | :user_already_exists | :too_many_requests_to_user}
+  def create_user(user) do
+    with :ok <- Validators.validate_user(user),
+         :ok <- Users.create(user),
+         :ok <- RateLimiter.track(user) do
+      :ok
     else
-      true ->
-        {:error, :user_already_exists}
+      {:error, _reason} = error ->
+        error
     end
   end
 
-  def create_user(_user), do: {:error, :wrong_arguments}
-
   @spec deposit(User.name(), Account.balance(), Account.currency()) ::
-          {:ok, Account.balance()} | {:error, :wrong_arguments | :user_does_not_exist}
-  def deposit(user, amount, currency)
-      when is_binary(user) and is_number(amount) and is_binary(currency) do
-    with {:user_exists, true} <- {:user_exists, Users.user_exists?(user)},
+          {:ok, Account.balance()}
+          | {:error, :wrong_arguments | :user_does_not_exist | :too_many_requests_to_user}
+  def deposit(user, amount, currency) do
+    with :ok <- Validators.validate_user(user),
+         :ok <- Validators.validate_account(currency, amount),
+         {:ok, _user} <- Users.get_user(user),
+         :ok <- RateLimiter.track(user),
          {:ok, balance} <- Users.deposit(user, amount, currency) do
       {:ok, balance}
     else
-      {:user_exists, false} ->
-        {:error, :user_does_not_exist}
-
       {:error, _reason} = error ->
         error
     end
   end
 
-  def deposit(_user, _amount, _currency), do: {:error, :wrong_arguments}
-
   @spec withdraw(User.name(), Account.balance(), Account.currency()) ::
-          {:ok, Account.balance()}
-          | {:error, :wrong_arguments | :user_does_not_exist | :not_enough_money}
-  def withdraw(user, amount, currency)
-      when is_binary(user) and is_number(amount) and is_binary(currency) do
-    with {:user_exists, true} <- {:user_exists, Users.user_exists?(user)},
+          {:error,
+           :wrong_arguments
+           | :user_does_not_exist
+           | :not_enough_money
+           | :too_many_requests_to_user}
+          | {:ok, Account.balance()}
+  def withdraw(user, amount, currency) do
+    with :ok <- Validators.validate_user(user),
+         :ok <- Validators.validate_account(currency, amount),
+         {:ok, _user} <- Users.get_user(user),
+         :ok <- RateLimiter.track(user),
          {:ok, balance} <- Users.withdraw(user, amount, currency) do
       {:ok, balance}
     else
-      {:user_exists, false} ->
-        {:error, :user_does_not_exist}
-
       {:error, _reason} = error ->
         error
     end
   end
-
-  def withdraw(_user, _amount, _currency), do: {:error, :wrong_arguments}
 
   @spec get_balance(User.name(), Account.currency()) ::
           {:ok, Account.balance()} | {:error, :wrong_arguments | :user_does_not_exist}
-  def get_balance(user, currency) when is_binary(user) and is_binary(currency) do
-    with {:user_exists, true} <- {:user_exists, Users.user_exists?(user)},
+  def get_balance(user, currency) do
+    with :ok <- Validators.validate_user(user),
+         :ok <- Validators.validate_account(currency),
+         {:ok, _user} <- Users.get_user(user),
+         :ok <- RateLimiter.track(user),
          {:ok, balance} <- Users.get_balance(user, currency) do
       {:ok, balance}
     else
-      {:user_exists, false} ->
-        {:error, :user_does_not_exist}
-
       {:error, _reason} = error ->
         error
     end
   end
-
-  def get_balance(_user, _currency), do: {:error, :wrong_arguments}
 
   @spec send(User.name(), User.name(), Account.balance(), Account.currency()) ::
           {:error,
            :wrong_arguments
            | :not_enough_money
            | :receiver_does_not_exist
-           | :sender_does_not_exist}
+           | :sender_does_not_exist
+           | :too_many_requests_to_sender
+           | :too_many_requests_to_receiver}
           | {:ok, Account.balance(), Account.balance()}
-  def send(from_user, to_user, amount, currency)
-      when is_binary(from_user) and is_binary(to_user) and is_number(amount) and
-             is_binary(currency) do
-    with {:user_exists_sender, true} <- {:user_exists_sender, Users.user_exists?(from_user)},
-         {:user_exists_receiver, true} <- {:user_exists_receiver, Users.user_exists?(to_user)},
-         {:ok, f_balance} <- Users.withdraw(from_user, amount, currency),
-         {:ok, d_balance} <- Users.deposit(to_user, amount, currency) do
-      {:ok, f_balance, d_balance}
+  def send(from_user, to_user, amount, currency) do
+    with :ok <- Validators.validate_user(from_user),
+         :ok <- Validators.validate_user(to_user),
+         :ok <- Validators.validate_account(currency, amount),
+         {:ok, _user} <- get_user(from_user, :sender),
+         {:ok, _user} <- get_user(to_user, :receiver),
+         :ok <- validate_rate_limit(from_user, :sender),
+         :ok <- validate_rate_limit(to_user, :receiver),
+         {:ok, from_user_balance} <- Users.withdraw(from_user, amount, currency),
+         {:ok, to_user_balance} <- Users.deposit(to_user, amount, currency) do
+      {:ok, from_user_balance, to_user_balance}
     else
-      {:user_exists_sender, false} ->
-        {:error, :sender_does_not_exist}
-
-      {:user_exists_receiver, false} ->
-        {:error, :receiver_does_not_exist}
-
       {:error, _reason} = error ->
         error
     end
   end
 
-  def send(_from_user, _to_user, _amount, _currency), do: {:error, :wrong_arguments}
+  defp get_user(user, user_type) do
+    case Users.get_user(user) do
+      {:error, :user_does_not_exist} when user_type == :sender ->
+        {:error, :sender_does_not_exist}
+
+      {:error, :user_does_not_exist} when user_type == :receiver ->
+        {:error, :receiver_does_not_exist}
+
+      {:ok, user} ->
+        {:ok, user}
+    end
+  end
+
+  defp validate_rate_limit(user, user_type) do
+    case RateLimiter.track(user) do
+      {:error, :too_many_requests_to_user} when user_type == :sender ->
+        {:error, :too_many_requests_to_sender}
+
+      {:error, :too_many_requests_to_user} when user_type == :receiver ->
+        {:error, :too_many_requests_to_receiver}
+
+      :ok ->
+        :ok
+    end
+  end
 end

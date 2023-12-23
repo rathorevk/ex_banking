@@ -44,7 +44,7 @@ defmodule ExBanking.RateLimiter do
     GenServer.start_link(__MODULE__, [], name: __MODULE__)
   end
 
-  @spec track(String.t()) :: :ok | {:error, :limit_reached}
+  @spec track(String.t()) :: :ok | {:error, :too_many_requests_to_user}
   def track(api_key) do
     # Calculate the start of the current window.
     current_timestamp = now()
@@ -61,21 +61,17 @@ defmodule ExBanking.RateLimiter do
     # Query the table for the previous window usage record.
     previous_window_usage = get_window_usage(api_key, previous_window_start)
 
-    IO.inspect({current_window_usage, previous_window_usage}, label: "currentm prev usage")
-
     # Calculate how much of the current window already elapsed.
     window_elapsed_ratio = (current_timestamp - current_window_start) / @window_size
 
     # Then calculate the usage with the sliding window algorithm formula.
     usage = current_window_usage + (1 - window_elapsed_ratio) * previous_window_usage
 
-    IO.inspect({usage, @max_request_count}, label: "usage")
-
     if usage > @max_request_count do
       # We already incremented the usage counters. We need to fix
       # the usage record since the request will be rate limited.
       update_window_usage(record_key, _increment_counter = -1)
-      {:error, :limit_reached}
+      {:error, :too_many_requests_to_user}
     else
       # Request should be allowed.
       :ok
@@ -95,7 +91,6 @@ defmodule ExBanking.RateLimiter do
 
   @impl true
   def handle_info(:perform_cleanup, state) do
-    IO.puts("Performing ets table cleanup")
     # Clean up records with windows that are older than the previous window.
     previous_window_start = window_start(now(), @window_size) - @window_size
 
