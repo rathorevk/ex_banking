@@ -12,7 +12,10 @@ defmodule ExBanking.Application do
       {Registry, keys: :unique, name: ExBanking.UserRegistry},
 
       # Start User Supervisor
-      {DynamicSupervisor, strategy: :one_for_one, name: ExBanking.Users.Supervisor}
+      {DynamicSupervisor, strategy: :one_for_one, name: ExBanking.Users.Supervisor},
+
+      # Start RateLimiter
+      ExBanking.RateLimiter
     ]
 
     # See https://hexdocs.pm/elixir/Supervisor.html

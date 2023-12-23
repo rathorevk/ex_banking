@@ -56,6 +56,15 @@ config :logger, :console,
 # Use Jason for JSON parsing in Phoenix
 config :phoenix, :json_library, Jason
 
+# Configure RateLimiter
+config :ex_banking, :rate_limit,
+  # Size of the rate limiting window in milliseconds.
+  window_size_ms: 60 * 1000,
+  # Rate limit — i.e. the maximum number of requests allowed for the window.
+  maximum_request_count: 10,
+  # Interval in the milliseconds for removing outdated data from the usage table.
+  cleanup_interval_ms: 120 * 1000
+
 # Import environment specific config. This must remain at the bottom
 # of this file so it overrides the configuration defined above.
 import_config "#{config_env()}.exs"
