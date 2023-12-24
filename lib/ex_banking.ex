@@ -11,6 +11,8 @@ defmodule ExBanking do
   alias ExBanking.Users
   alias ExBanking.Validators
 
+  import ExBanking.Utils, only: [get_user: 2, validate_rate_limit: 2]
+
   @spec create_user(User.name()) ::
           :ok | {:error, :wrong_arguments | :user_already_exists | :too_many_requests_to_user}
   def create_user(user) do
@@ -98,32 +100,6 @@ defmodule ExBanking do
     else
       {:error, _reason} = error ->
         error
-    end
-  end
-
-  defp get_user(user, user_type) do
-    case Users.get_user(user) do
-      {:error, :user_does_not_exist} when user_type == :sender ->
-        {:error, :sender_does_not_exist}
-
-      {:error, :user_does_not_exist} when user_type == :receiver ->
-        {:error, :receiver_does_not_exist}
-
-      {:ok, user} ->
-        {:ok, user}
-    end
-  end
-
-  defp validate_rate_limit(user, user_type) do
-    case RateLimiter.track(user) do
-      {:error, :too_many_requests_to_user} when user_type == :sender ->
-        {:error, :too_many_requests_to_sender}
-
-      {:error, :too_many_requests_to_user} when user_type == :receiver ->
-        {:error, :too_many_requests_to_receiver}
-
-      :ok ->
-        :ok
     end
   end
 end

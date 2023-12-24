@@ -36,7 +36,7 @@ defmodule ExBanking.Users do
     end
   end
 
-  @spec get_user(any()) :: {:error, :user_does_not_exist} | {:ok, User.t()}
+  @spec get_user(User.name()) :: {:error, :user_does_not_exist} | {:ok, User.t()}
   def get_user(user) do
     case Registry.lookup(ExBanking.UserRegistry, user) do
       [] -> {:error, :user_does_not_exist}

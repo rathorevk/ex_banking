@@ -65,9 +65,6 @@ config :ex_banking, :rate_limit,
   # Interval in the milliseconds for removing outdated data from the usage table.
   cleanup_interval_ms: 120 * 1000
 
-# Configure Currencies
-config :ex_banking, :currencies, ["USD", "EURO", "GBP", "JPY"]
-
 # Import environment specific config. This must remain at the bottom
 # of this file so it overrides the configuration defined above.
 import_config "#{config_env()}.exs"

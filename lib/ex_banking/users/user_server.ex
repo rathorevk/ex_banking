@@ -5,6 +5,8 @@ defmodule ExBanking.Users.Server do
   alias ExBanking.Types.Account
   alias ExBanking.Types.User
 
+  import ExBanking.Utils, only: [to_float: 1]
+
   defmodule State do
     defstruct user: nil, accounts: %{}
   end
@@ -80,12 +82,6 @@ defmodule ExBanking.Users.Server do
        do: true
 
   defp enough_balance?(_account, _deduct_amount), do: false
-
-  defp to_float(balance) when is_integer(balance),
-    do: balance |> :erlang.float()
-
-  defp to_float(balance),
-    do: Float.round(balance, 2)
 
   # To register user in the UserRegistry
   defp via_tuple(user) do
