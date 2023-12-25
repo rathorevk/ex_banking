@@ -40,7 +40,7 @@ defmodule ExBanking.Users do
   def get_user(user) do
     case Registry.lookup(ExBanking.UserRegistry, user) do
       [] -> {:error, :user_does_not_exist}
-      [{_, _}] -> {:ok, %User{name: user}}
+      [{_, _}] -> {:ok, UserServer.get_user(user)}
     end
   end
 
@@ -48,5 +48,12 @@ defmodule ExBanking.Users do
           {:ok, Account.balance()}
   def get_balance(username, currency) do
     {:ok, UserServer.get_balance(username, currency)}
+  end
+
+  def delete_user(username) do
+    case get_user(username) do
+      {:ok, _user} -> UserServer.stop(username)
+      {:error, _reason} -> :ok
+    end
   end
 end

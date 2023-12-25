@@ -18,3 +18,12 @@ config :logger, level: :warning
 
 # Initialize plugs at runtime for faster test compilation
 config :phoenix, :plug_init_mode, :runtime
+
+# Configure RateLimiter
+config :ex_banking, :rate_limit,
+  # Size of the rate limiting window in milliseconds.
+  window_size_ms: 5 * 1000,
+  # Rate limit — i.e. the maximum number of requests allowed for the window.
+  maximum_request_count: 10,
+  # Interval in the milliseconds for removing outdated data from the usage table.
+  cleanup_interval_ms: 120 * 1000

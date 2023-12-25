@@ -1,6 +1,6 @@
 defmodule ExBanking.Users.Server do
   @moduledoc false
-  use GenServer
+  use GenServer, restart: :transient
 
   alias ExBanking.Types.Account
   alias ExBanking.Types.User
@@ -19,6 +19,10 @@ defmodule ExBanking.Users.Server do
     GenServer.call(via_tuple(user_name), :get_user)
   end
 
+  def get_accounts(user_name) do
+    GenServer.call(via_tuple(user_name), :get_accounts)
+  end
+
   def get_balance(user_name, currency) do
     GenServer.call(via_tuple(user_name), {:get_balance, currency})
   end
@@ -31,6 +35,10 @@ defmodule ExBanking.Users.Server do
     GenServer.call(via_tuple(user_name), {:withdraw, amount, currency})
   end
 
+  def stop(user_name) do
+    GenServer.stop(via_tuple(user_name), :normal)
+  end
+
   @impl true
   def init(user_name) do
     user = %User{name: user_name}
@@ -39,7 +47,11 @@ defmodule ExBanking.Users.Server do
 
   @impl true
   def handle_call(:get_user, _from, state) do
-    {:reply, state, state}
+    {:reply, state.user, state}
+  end
+
+  def handle_call(:get_accounts, _from, state) do
+    {:reply, Map.values(state.accounts), state}
   end
 
   def handle_call({:get_balance, currency}, _from, %State{accounts: accounts} = state) do

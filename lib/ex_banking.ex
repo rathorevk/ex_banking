@@ -14,11 +14,10 @@ defmodule ExBanking do
   import ExBanking.Utils, only: [get_user: 2, validate_rate_limit: 2]
 
   @spec create_user(User.name()) ::
-          :ok | {:error, :wrong_arguments | :user_already_exists | :too_many_requests_to_user}
+          :ok | {:error, :wrong_arguments | :user_already_exists}
   def create_user(user) do
     with :ok <- Validators.validate_user(user),
-         :ok <- Users.create(user),
-         :ok <- RateLimiter.track(user) do
+         :ok <- Users.create(user) do
       :ok
     else
       {:error, _reason} = error ->
