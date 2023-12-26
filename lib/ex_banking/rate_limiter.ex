@@ -17,6 +17,7 @@ defmodule ExBanking.RateLimiter do
     cleanup_interval_ms: 120 * 1000
   ```
   """
+  alias ExBanking.Types.User
   use GenServer
 
   require Logger
@@ -53,7 +54,7 @@ defmodule ExBanking.RateLimiter do
     GenServer.start_link(__MODULE__, [], name: __MODULE__)
   end
 
-  @spec track(String.t()) :: :ok | {:error, :too_many_requests_to_user}
+  @spec track(user :: User.name()) :: :ok | {:error, :too_many_requests_to_user}
   def track(api_key) do
     # Calculate the start of the current window.
     current_timestamp = now()

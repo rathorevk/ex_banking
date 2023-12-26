@@ -49,9 +49,10 @@ defmodule ExBanking do
       iex> deposit(nil, 500.5, "USD")
       {:error, :wrong_arguments}
   """
-  @spec deposit(User.name(), Account.balance(), Account.currency()) ::
-          {:ok, Account.balance()}
+  @spec deposit(user_name :: User.name(), amount :: amount, currency :: Account.currency()) ::
+          {:ok, balance}
           | {:error, :wrong_arguments | :user_does_not_exist | :too_many_requests_to_user}
+        when amount: float() | non_neg_integer(), balance: Account.balance()
   def deposit(user, amount, currency) do
     with :ok <- Validators.validate_user(user),
          :ok <- Validators.validate_account(currency, amount),
@@ -78,13 +79,14 @@ defmodule ExBanking do
       iex> withdraw("John Doe", 1000.5, "USD")
       {:error, :not_enough_money}
   """
-  @spec withdraw(User.name(), Account.balance(), Account.currency()) ::
-          {:error,
-           :wrong_arguments
-           | :user_does_not_exist
-           | :not_enough_money
-           | :too_many_requests_to_user}
-          | {:ok, Account.balance()}
+  @spec withdraw(user_name :: User.name(), amount :: amount, currency :: Account.currency()) ::
+          {:ok, balance}
+          | {:error,
+             :wrong_arguments
+             | :user_does_not_exist
+             | :not_enough_money
+             | :too_many_requests_to_user}
+        when amount: float() | non_neg_integer(), balance: Account.balance()
   def withdraw(user, amount, currency) do
     with :ok <- Validators.validate_user(user),
          :ok <- Validators.validate_account(currency, amount),
@@ -109,8 +111,10 @@ defmodule ExBanking do
       iex> get_balance(nil, 10.5, "USD")
       {:error, :wrong_arguments}
   """
-  @spec get_balance(User.name(), Account.currency()) ::
-          {:ok, Account.balance()} | {:error, :wrong_arguments | :user_does_not_exist}
+  @spec get_balance(user :: User.name(), currency :: Account.currency()) ::
+          {:ok, balance}
+          | {:error, :wrong_arguments | :user_does_not_exist | :too_many_requests_to_user}
+        when balance: Account.balance()
   def get_balance(user, currency) do
     with :ok <- Validators.validate_user(user),
          :ok <- Validators.validate_account(currency),
@@ -137,7 +141,12 @@ defmodule ExBanking do
       iex> send("John Doe",  "Joseph", 100.5, "USD")
       {:error, :not_enough_money}
   """
-  @spec send(User.name(), User.name(), Account.balance(), Account.currency()) ::
+  @spec send(
+          from_user :: User.name(),
+          to_user :: User.name(),
+          amount :: amount,
+          currency :: Account.currency()
+        ) ::
           {:error,
            :wrong_arguments
            | :not_enough_money
@@ -145,7 +154,10 @@ defmodule ExBanking do
            | :sender_does_not_exist
            | :too_many_requests_to_sender
            | :too_many_requests_to_receiver}
-          | {:ok, Account.balance(), Account.balance()}
+          | {:ok, from_user_balance, to_user_balance}
+        when amount: float() | non_neg_integer(),
+             from_user_balance: Account.balance(),
+             to_user_balance: Account.balance()
   def send(from_user, to_user, amount, currency) do
     with :ok <- Validators.validate_user(from_user),
          :ok <- Validators.validate_user(to_user),
