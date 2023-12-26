@@ -58,23 +58,16 @@ defmodule ExBanking.ExBankingTest do
       assert new_balance == amount_1 + amount_2
     end
 
-    test "returns error when too many requests are made", %{ccy: currency} do
-      ## creating new user with request_count=0
-      user = create_user()
-      amount = 0.0
+    test "returns error when too many requests are made", %{user: user, ccy: currency} do
+      error_too_many_requests_count =
+        1..1000
+        |> Enum.map(fn _ ->
+          Task.async(fn -> ExBanking.deposit(user, 100.0, currency) end)
+        end)
+        |> Enum.map(&Task.await/1)
+        |> Enum.count(&(&1 == {:error, :too_many_requests_to_user}))
 
-      ## max_request_count = 10  i.e. request allowed per user in 5 seconds for Test Environment
-      Enum.each(1..10, fn _x ->
-        assert {:ok, amount} == ExBanking.deposit(user, amount, currency)
-      end)
-
-      ## hence 11th request should not be allowed
-      assert {:error, :too_many_requests_to_user} ==
-               ExBanking.deposit(user, amount, currency)
-
-      ## This should be allowed in the next window
-      :timer.sleep(5_000)
-      assert {:ok, amount} == ExBanking.deposit(user, amount, currency)
+      assert error_too_many_requests_count >= 1
     end
   end
 
@@ -127,25 +120,18 @@ defmodule ExBanking.ExBankingTest do
       assert rem_balance_2 == Float.round(rem_balance_1 - amount_2, 2)
     end
 
-    test "returns error when too many requests are made", %{ccy: currency} do
-      user = create_user()
+    test "returns error when too many requests are made", %{user: user, ccy: currency} do
+      {:ok, _balance} = ExBanking.deposit(user, 10_000, currency)
 
-      ## max_request_count = 10  i.e. request allowed per user in 10 seconds
+      error_too_many_requests_count =
+        1..1000
+        |> Enum.map(fn _ ->
+          Task.async(fn -> ExBanking.withdraw(user, 1.0, currency) end)
+        end)
+        |> Enum.map(&Task.await/1)
+        |> Enum.count(&(&1 == {:error, :too_many_requests_to_user}))
 
-      ## deposit - request-1
-      {:ok, balance} = ExBanking.deposit(user, _amount = 10, currency)
-
-      amount_to_withdraw = 0.0
-
-      ## withdraw request-9
-      Enum.each(1..9, fn _x ->
-        assert {:ok, balance} == ExBanking.withdraw(user, amount_to_withdraw, currency)
-      end)
-
-      ## request_count = 1(deposit) + 9 (withdraw) + 1(withdraw) = 11
-      ## hence 11th request should not be allowed
-      assert {:error, :too_many_requests_to_user} ==
-               ExBanking.withdraw(user, amount_to_withdraw, currency)
+      assert error_too_many_requests_count >= 1
     end
   end
 
@@ -189,16 +175,16 @@ defmodule ExBanking.ExBankingTest do
       assert new_balance == balance - withdraw_amount
     end
 
-    test "returns error when too many requests are made", %{ccy: currency} do
-      user = create_user()
+    test "returns error when too many requests are made", %{user: user, ccy: currency} do
+      error_too_many_requests_count =
+        1..1000
+        |> Enum.map(fn _ ->
+          Task.async(fn -> ExBanking.get_balance(user, currency) end)
+        end)
+        |> Enum.map(&Task.await/1)
+        |> Enum.count(&(&1 == {:error, :too_many_requests_to_user}))
 
-      ## max_request_count = 10
-      Enum.each(1..10, fn _x ->
-        assert {:ok, 0.0} == ExBanking.get_balance(user, currency)
-      end)
-
-      ## hence 11th request should not be allowed
-      assert {:error, :too_many_requests_to_user} == ExBanking.get_balance(user, currency)
+      assert error_too_many_requests_count >= 1
     end
   end
 
@@ -286,26 +272,22 @@ defmodule ExBanking.ExBankingTest do
       assert new_user_b_balance == Float.round(user_b_balance - amount_to_send_1, 2)
     end
 
-    test "returns error when got too many requests from a user", %{ccy: currency} do
-      from_user = create_user()
-      to_user = create_user()
+    test "returns error when too many requests are made", %{
+      from_user: from_user,
+      to_user: to_user,
+      ccy: currency
+    } do
+      {:ok, _balance} = ExBanking.deposit(from_user, _amount = 10_000, currency)
 
-      ## max_request_count = 10  i.e. request allowed per user in 10 seconds
-      ## request_count = 1(deposit)
-      {:ok, _balance} = ExBanking.deposit(from_user, _amount = 10, currency)
+      error_too_many_requests_count =
+        1..1000
+        |> Enum.map(fn _ ->
+          Task.async(fn -> ExBanking.send(from_user, to_user, 1.0, currency) end)
+        end)
+        |> Enum.map(&Task.await/1)
+        |> Enum.count(&(&1 == {:error, :too_many_requests_to_sender}))
 
-      amount_to_send = 0.0
-
-      ## request_count = 1(deposit) + 9 (send) = 10
-      Enum.each(1..9, fn _x ->
-        assert {:ok, _from_user_balance, _to_user_balance} =
-                 ExBanking.send(from_user, to_user, amount_to_send, currency)
-      end)
-
-      ## request_count = 1(deposit) + 9 (send) + 1(send) = 11
-      ## hence 11th request should not be allowed
-      assert {:error, :too_many_requests_to_sender} ==
-               ExBanking.send(from_user, to_user, amount_to_send, currency)
+      assert error_too_many_requests_count >= 1
     end
   end
 

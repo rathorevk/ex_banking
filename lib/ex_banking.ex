@@ -7,12 +7,11 @@ defmodule ExBanking do
   if it comes from the database, an external API or others.
   """
 
-  alias ExBanking.RateLimiter
   alias ExBanking.Types.{Account, User}
   alias ExBanking.Users
   alias ExBanking.Validators
 
-  import ExBanking.Utils, only: [get_user: 2, validate_rate_limit: 2]
+  import ExBanking.Utils, only: [get_user: 2]
 
   @doc """
   Creates a user.
@@ -58,7 +57,6 @@ defmodule ExBanking do
     with :ok <- Validators.validate_user(user),
          :ok <- Validators.validate_account(currency, amount),
          {:ok, _user} <- Users.get_user(user),
-         :ok <- RateLimiter.track(user),
          {:ok, balance} <- Users.deposit(user, amount, currency) do
       {:ok, balance}
     else
@@ -92,7 +90,6 @@ defmodule ExBanking do
     with :ok <- Validators.validate_user(user),
          :ok <- Validators.validate_account(currency, amount),
          {:ok, _user} <- Users.get_user(user),
-         :ok <- RateLimiter.track(user),
          {:ok, balance} <- Users.withdraw(user, amount, currency) do
       {:ok, balance}
     else
@@ -120,7 +117,6 @@ defmodule ExBanking do
     with :ok <- Validators.validate_user(user),
          :ok <- Validators.validate_account(currency),
          {:ok, _user} <- Users.get_user(user),
-         :ok <- RateLimiter.track(user),
          {:ok, balance} <- Users.get_balance(user, currency) do
       {:ok, balance}
     else
@@ -165,8 +161,6 @@ defmodule ExBanking do
          :ok <- Validators.validate_account(currency, amount),
          {:ok, _user} <- get_user(from_user, :sender),
          {:ok, _user} <- get_user(to_user, :receiver),
-         :ok <- validate_rate_limit(from_user, :sender),
-         :ok <- validate_rate_limit(to_user, :receiver),
          {:ok, from_user_balance} <- Users.withdraw(from_user, amount, currency),
          {:ok, to_user_balance} <- Users.deposit(to_user, amount, currency) do
       {:ok, from_user_balance, to_user_balance}

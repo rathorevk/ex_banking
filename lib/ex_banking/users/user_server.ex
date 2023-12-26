@@ -61,6 +61,14 @@ defmodule ExBanking.Users.Server do
     GenServer.stop(via_tuple(user_name))
   end
 
+  @spec request_allowed?(pid()) :: boolean()
+  def request_allowed?(pid) do
+    case Process.info(pid, :message_queue_len) do
+      {:message_queue_len, len} when len < 10 -> true
+      _other -> false
+    end
+  end
+
   #########################################################################
   # Callbacks
   #########################################################################

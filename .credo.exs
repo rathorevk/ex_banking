@@ -14,7 +14,7 @@
       color: true,
       checks: %{
         enabled: [
-          {Credo.Check.Design.AliasUsage, priority: :low},
+          {Credo.Check.Design.AliasUsage, priority: :low}
           # ... other checks omitted for readability ...
         ]
       }

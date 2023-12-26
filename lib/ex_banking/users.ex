@@ -9,11 +9,11 @@ defmodule ExBanking.Users do
 
   @spec create(username :: User.name()) :: :ok
   def create(username) do
-    case get_user(username) do
-      {:ok, _user} ->
+    case lookup(username) do
+      [{_pid, _value}] ->
         {:error, :user_already_exists}
 
-      {:error, :user_does_not_exist} ->
+      [] ->
         {:ok, _child} = UserSupervisor.start_child(user: username)
         :ok
     end
@@ -36,11 +36,19 @@ defmodule ExBanking.Users do
     end
   end
 
-  @spec get_user(username :: User.name()) :: {:error, :user_does_not_exist} | {:ok, User.t()}
-  def get_user(user) do
-    case Registry.lookup(ExBanking.UserRegistry, user) do
-      [] -> {:error, :user_does_not_exist}
-      [{_, _}] -> {:ok, UserServer.get_user(user)}
+  @spec get_user(username :: User.name()) ::
+          {:error, :user_does_not_exist | :too_many_requests_to_user} | {:ok, user :: User.t()}
+  def get_user(username) do
+    case lookup(username) do
+      [] ->
+        {:error, :user_does_not_exist}
+
+      [{pid, _value}] ->
+        ## checking request-count
+        case UserServer.request_allowed?(pid) do
+          true -> {:ok, %User{name: username}}
+          false -> {:error, :too_many_requests_to_user}
+        end
     end
   end
 
@@ -52,9 +60,13 @@ defmodule ExBanking.Users do
 
   @spec delete_user(username :: User.name()) :: :ok
   def delete_user(username) do
-    case get_user(username) do
-      {:ok, _user} -> UserServer.stop(username)
-      {:error, _reason} -> :ok
+    case lookup(username) do
+      [{_pid, _value}] -> UserServer.stop(username)
+      [] -> :ok
     end
+  end
+
+  defp lookup(user) do
+    Registry.lookup(ExBanking.UserRegistry, user)
   end
 end

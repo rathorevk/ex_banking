@@ -24,24 +24,6 @@ To start your Phoenix server:
 -  Now you can visit [`localhost:4000`](http://localhost:4000) from your browser.
 
 
-## Configuration
-
-- Default rate-limiting config  -
-  - Implemented rate-limiting mechanism using the sliding window technique.
-  - Maximum 10 requests are allowed in 60 seconds.
-  - After every 120 seconds, it performs the cleanup operation and deletes data older than the previous window.
-
-```elixir
-config :ex_banking, :rate_limit,
-  # Size of the rate-limiting window in milliseconds.
-  window_size_ms: 60 * 1000,
-  # Rate limit — i.e. the maximum number of requests allowed for the window.
-  maximum_request_count: 10,
-  # Interval in the milliseconds for removing outdated data from the usage table.
-  cleanup_interval_ms: 120 * 1000
-```
-
-
 ## API Reference
 
 ### 1. Create User
