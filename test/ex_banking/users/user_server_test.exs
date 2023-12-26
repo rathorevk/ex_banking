@@ -5,13 +5,6 @@ defmodule ExBanking.Users.ServerTest do
   alias ExBanking.Types.User
   alias ExBanking.Users.Server, as: UserServer
 
-  setup_all do
-    user = Faker.Person.name()
-    {:ok, pid} = UserServer.start_link(user: user)
-
-    {:ok, user: user, pid: pid}
-  end
-
   describe "start_link/1" do
     test "with valid params start the genserver" do
       user = Faker.Person.name()

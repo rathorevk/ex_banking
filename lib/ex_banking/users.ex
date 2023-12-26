@@ -1,6 +1,6 @@
 defmodule ExBanking.Users do
   @moduledoc """
-  The Users context.
+  This module provides a context for handling user-related operations.
   """
 
   alias ExBanking.Types.Account
@@ -8,7 +8,7 @@ defmodule ExBanking.Users do
   alias ExBanking.Users.Server, as: UserServer
   alias ExBanking.Users.Supervisor, as: UserSupervisor
 
-  @spec create(User.name()) :: :ok
+  @spec create(username :: User.name()) :: :ok
   def create(username) do
     case get_user(username) do
       {:ok, _user} ->
@@ -20,23 +20,24 @@ defmodule ExBanking.Users do
     end
   end
 
-  @spec deposit(User.name(), Account.balance(), Account.currency()) ::
-          {:ok, Account.balance()}
+  @spec deposit(user_name :: User.name(), amount :: amount, currency :: Account.currency()) ::
+          {:ok, balance}
+        when amount: float() | non_neg_integer(), balance: Account.balance()
   def deposit(username, amount, currency) do
     {:ok, UserServer.deposit(username, amount, currency)}
   end
 
-  @spec withdraw(User.name(), Account.balance(), Account.currency()) ::
-          {:ok, Account.balance()} | {:error, :not_enough_money}
+  @spec withdraw(user_name :: User.name(), amount :: amount, currency :: Account.currency()) ::
+          {:error, :not_enough_money} | {:ok, balance}
+        when amount: float() | non_neg_integer(), balance: Account.balance()
   def withdraw(username, amount, currency) do
-    with balance when is_number(balance) <- UserServer.withdraw(username, amount, currency) do
-      {:ok, balance}
-    else
+    case UserServer.withdraw(username, amount, currency) do
       {:error, _reason} = error -> error
+      balance when is_float(balance) -> {:ok, balance}
     end
   end
 
-  @spec get_user(User.name()) :: {:error, :user_does_not_exist} | {:ok, User.t()}
+  @spec get_user(username :: User.name()) :: {:error, :user_does_not_exist} | {:ok, User.t()}
   def get_user(user) do
     case Registry.lookup(ExBanking.UserRegistry, user) do
       [] -> {:error, :user_does_not_exist}
@@ -44,12 +45,13 @@ defmodule ExBanking.Users do
     end
   end
 
-  @spec get_balance(User.name(), Account.currency()) ::
+  @spec get_balance(user_name :: User.name(), currency :: Account.currency()) ::
           {:ok, Account.balance()}
   def get_balance(username, currency) do
     {:ok, UserServer.get_balance(username, currency)}
   end
 
+  @spec delete_user(username :: User.name()) :: :ok
   def delete_user(username) do
     case get_user(username) do
       {:ok, _user} -> UserServer.stop(username)

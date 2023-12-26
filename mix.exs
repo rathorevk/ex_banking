@@ -45,7 +45,8 @@ defmodule ExBanking.MixProject do
       {:jason, "~> 1.2"},
       {:plug_cowboy, "~> 2.5"},
       {:domo, "~> 1.5"},
-      {:faker, "~> 0.17", only: :test}
+      {:faker, "~> 0.17", only: :test},
+      {:credo, "~> 1.6", only: [:dev, :test], runtime: false}
     ]
   end
 

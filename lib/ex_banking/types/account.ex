@@ -1,9 +1,17 @@
 defmodule ExBanking.Types.Account do
-  @moduledoc false
+  @moduledoc """
+  This module defines the `Account` struct and provides a validator function
+  for ensuring the integrity of account data.
+  """
   use Domo
 
-  defstruct [:currency, balance: 0.0]
+  import ExBanking.Utils, only: [to_float: 1]
 
+  defstruct currency: "", balance: 0.0
+
+  #########################################################################
+  # Types
+  #########################################################################
   @type currency :: String.t()
 
   @type balance :: float()
@@ -14,7 +22,10 @@ defmodule ExBanking.Types.Account do
           balance: balance()
         }
 
-  @spec validate(currency(), balance() | non_neg_integer()) ::
+  #########################################################################
+  # Public APIs
+  #########################################################################
+  @spec validate(currency :: currency(), balance :: balance() | non_neg_integer()) ::
           :ok | {:error, :wrong_arguments}
   def validate(currency, balance \\ 0.0) do
     %__MODULE__{currency: currency, balance: to_float(balance)}
@@ -24,10 +35,4 @@ defmodule ExBanking.Types.Account do
       {:error, _reason} -> {:error, :wrong_arguments}
     end
   end
-
-  defp to_float(number) when is_integer(number) do
-    :erlang.float(number)
-  end
-
-  defp to_float(number), do: number
 end

@@ -254,36 +254,36 @@ defmodule ExBanking.ExBankingTest do
                ExBanking.send(from_user, to_user, _amount = 100, currency)
     end
 
-    test "with valid params send money from userA to userB and vice-versa", %{
-      from_user: userA,
-      to_user: userB,
+    test "with valid params send money from user_a to user_b and vice-versa", %{
+      from_user: user_a,
+      to_user: user_b,
       ccy: currency
     } do
       ## deposit money into userA's account
       deposit_amount = 20.50
-      {:ok, _userA_balance} = ExBanking.deposit(userA, deposit_amount, currency)
+      {:ok, _user_a_balance} = ExBanking.deposit(user_a, deposit_amount, currency)
 
-      ## send money from userA's account to userB's Account
+      ## send money from user_a's account to user_b's Account
       amount_to_send = 10
 
-      assert {:ok, userA_balance, userB_balance} =
-               ExBanking.send(userA, userB, amount_to_send, currency)
+      assert {:ok, user_a_balance, user_b_balance} =
+               ExBanking.send(user_a, user_b, amount_to_send, currency)
 
-      ## userA's balance = 20.50 - 10 = 10.50
-      ## userB's balance = 10
-      assert userA_balance == deposit_amount - amount_to_send
-      assert userB_balance == amount_to_send
+      ## user_a's balance = 20.50 - 10 = 10.50
+      ## user_b's balance = 10
+      assert user_a_balance == deposit_amount - amount_to_send
+      assert user_b_balance == amount_to_send
 
-      ## send money from userB's account to userA's Account
+      ## send money from user_b's account to user_a's Account
       amount_to_send_1 = 5.555
 
-      assert {:ok, new_userB_balance, new_userA_balance} =
-               ExBanking.send(userB, userA, amount_to_send_1, currency)
+      assert {:ok, new_user_b_balance, new_user_a_balance} =
+               ExBanking.send(user_b, user_a, amount_to_send_1, currency)
 
-      ## userA's balance = 20.50 + 5.56 = 25.56
-      ## userB's balance = 10 - 5.56 = 4.44
-      assert new_userA_balance == Float.round(userA_balance + amount_to_send_1, 2)
-      assert new_userB_balance == Float.round(userB_balance - amount_to_send_1, 2)
+      ## user_a's balance = 20.50 + 5.56 = 25.56
+      ## user_b's balance = 10 - 5.56 = 4.44
+      assert new_user_a_balance == Float.round(user_a_balance + amount_to_send_1, 2)
+      assert new_user_b_balance == Float.round(user_b_balance - amount_to_send_1, 2)
     end
 
     test "returns error when got too many requests from a user", %{ccy: currency} do

@@ -1,13 +1,21 @@
 defmodule ExBanking.Users.Supervisor do
-  @moduledoc false
+  @moduledoc """
+  This module serves as a Supervisor for user GenServers.
+  """
   use DynamicSupervisor
 
   alias ExBanking.Users.Server, as: UserServer
+  alias ExBanking.Types.User
 
+  require Logger
+
+  @spec start_link(any()) :: Supervisor.on_start()
   def start_link(init_arg) do
+    Logger.info("Starting User Supervisor...")
     DynamicSupervisor.start_link(__MODULE__, init_arg, name: __MODULE__)
   end
 
+  @spec start_child([{:user, User.name()}, ...]) :: DynamicSupervisor.on_start_child()
   def start_child(args) do
     spec = {UserServer, args}
     DynamicSupervisor.start_child(__MODULE__, spec)

@@ -19,11 +19,15 @@ defmodule ExBanking.RateLimiter do
   """
   use GenServer
 
+  require Logger
+  require Record
+
+  #########################################################################
+  # Macros
+  #########################################################################
   @window_size Application.compile_env(:ex_banking, [:rate_limit, :window_size_ms])
   @max_request_count Application.compile_env(:ex_banking, [:rate_limit, :maximum_request_count])
   @cleanup_interval Application.compile_env(:ex_banking, [:rate_limit, :cleanup_interval_ms])
-
-  require Record
 
   Record.defrecordp(
     # A unique name of the record.
@@ -36,11 +40,16 @@ defmodule ExBanking.RateLimiter do
     pending_usage: 0
   )
 
+  #########################################################################
+  # Public APIs
+  #########################################################################
+
   @doc """
   Starts the RateLimiter GenServer process linked to the current process.
   """
   @spec start_link(any()) :: GenServer.on_start()
   def start_link(_) do
+    Logger.info("Starting RateLimiter...")
     GenServer.start_link(__MODULE__, [], name: __MODULE__)
   end
 
@@ -78,8 +87,14 @@ defmodule ExBanking.RateLimiter do
     end
   end
 
+  #########################################################################
+  # Callbacks
+  #########################################################################
+
   @impl true
   def init(_init_args) do
+    Logger.info("In Init RateLimiter...")
+
     # Create ETS table
     create_table()
 
@@ -91,6 +106,8 @@ defmodule ExBanking.RateLimiter do
 
   @impl true
   def handle_info(:perform_cleanup, state) do
+    Logger.info("Performing cleanup...")
+
     # Clean up records with windows that are older than the previous window.
     previous_window_start = window_start(now(), @window_size) - @window_size
 
@@ -113,6 +130,10 @@ defmodule ExBanking.RateLimiter do
 
     {:noreply, state}
   end
+
+  #########################################################################
+  # Private Functions
+  #########################################################################
 
   # To keep things simple, we'll use the module name as the name of our ETS table.
   defp table_name(), do: __MODULE__
