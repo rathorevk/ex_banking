@@ -3,8 +3,7 @@ defmodule ExBanking.Users do
   This module provides a context for handling user-related operations.
   """
 
-  alias ExBanking.Types.Account
-  alias ExBanking.Types.User
+  alias ExBanking.Types.{Account, User}
   alias ExBanking.Users.Server, as: UserServer
   alias ExBanking.Users.Supervisor, as: UserSupervisor
 

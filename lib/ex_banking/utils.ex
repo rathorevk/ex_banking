@@ -4,8 +4,8 @@ defmodule ExBanking.Utils do
   across various parts of the application.
   """
 
-  alias ExBanking.Types.User
   alias ExBanking.RateLimiter
+  alias ExBanking.Types.User
   alias ExBanking.Users
 
   @spec get_user(user_name :: User.name(), user_type) ::

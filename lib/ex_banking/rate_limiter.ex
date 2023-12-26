@@ -17,8 +17,9 @@ defmodule ExBanking.RateLimiter do
     cleanup_interval_ms: 120 * 1000
   ```
   """
-  alias ExBanking.Types.User
   use GenServer
+
+  alias ExBanking.Types.User
 
   require Logger
   require Record

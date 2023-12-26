@@ -8,6 +8,7 @@ defmodule ExBanking do
   """
 
   alias ExBanking.RateLimiter
+  alias ExBanking.Types.{Account, User}
   alias ExBanking.Users
   alias ExBanking.Validators
 

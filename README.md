@@ -1,5 +1,5 @@
 # ExBanking
-Simple banking application using Elixir/OTP with the features of creating users, deposits, withdrawals, and send money.
+Simple banking application using Elixir/OTP with the features of creating users, deposits, withdrawals, get balances and send money.
 
 ## Getting Started
 
@@ -153,7 +153,7 @@ ExBanking.send(from_user, to_user, amount, currency)
 
 **Example:**
 ```elixir
-{:ok, 100.5} = ExBanking.send("John Doe", "Jason", 100.50, "USD")
+{:ok, 80.0, 10.0} = ExBanking.send("John Doe", "Jason", 10, "USD")
 ```
 
 

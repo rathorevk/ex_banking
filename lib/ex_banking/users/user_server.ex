@@ -5,8 +5,7 @@ defmodule ExBanking.Users.Server do
   """
   use GenServer, restart: :transient
 
-  alias ExBanking.Types.Account
-  alias ExBanking.Types.User
+  alias ExBanking.Types.{Account, User}
 
   import ExBanking.Utils, only: [to_float: 1]
 

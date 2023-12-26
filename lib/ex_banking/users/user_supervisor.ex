@@ -4,8 +4,8 @@ defmodule ExBanking.Users.Supervisor do
   """
   use DynamicSupervisor
 
-  alias ExBanking.Users.Server, as: UserServer
   alias ExBanking.Types.User
+  alias ExBanking.Users.Server, as: UserServer
 
   require Logger
 
